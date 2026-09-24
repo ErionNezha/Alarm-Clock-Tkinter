@@ -1,0 +1,97 @@
+<!-- Created by Erion Nezha — © 2026 All rights reserved -->
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alarm Clock — Demo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0e14;color:#e6e6e6;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.card{background:linear-gradient(135deg,#0d1b2a,#1b263b);border:1px solid #00d4ff33;border-radius:16px;padding:36px 40px;text-align:center;max-width:480px;width:100%;box-shadow:0 10px 40px #0008}
+h1{color:#fff;font-size:1.6rem;margin-bottom:4px}
+.sub{color:#9fb3c8;font-size:.85rem;margin-bottom:20px}
+.clock{font-family:'Consolas',monospace;font-size:3.2rem;color:#00d4ff;letter-spacing:4px;margin-bottom:6px;text-shadow:0 0 20px #00d4ff66}
+.date{color:#5c6b7f;font-size:.85rem;margin-bottom:22px}
+.setters{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
+.setters label{color:#9fb3c8;font-size:.75rem;display:block;margin-bottom:6px}
+.setters select{background:#0d1420;color:#fff;border:1px solid #ffffff22;border-radius:8px;padding:10px 12px;font-size:1rem;cursor:pointer}
+button{background:#00d4ff;color:#04121a;border:none;padding:12px 28px;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;transition:.2s}
+button:hover{background:#33e0ff}
+button:disabled{background:#3a4a5c;color:#8a9aad;cursor:not-allowed}
+#stopBtn{background:#ff4d6d;color:#fff;display:none;margin-top:10px}
+.status{margin-top:16px;color:#9fb3c8;font-size:.9rem;min-height:24px}
+.status.set{color:#ffd75c}
+.ringing{animation:ring .5s infinite}
+@keyframes ring{0%,100%{transform:rotate(0)}25%{transform:rotate(3deg)}75%{transform:rotate(-3deg)}}
+footer{margin-top:24px;color:#5c6b7f;font-size:.8rem}
+footer strong{color:#9fb3c8}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <h1>⏰ Alarm Clock</h1>
+  <div class="sub">Version web i alarmit Tkinter — zgjidh kohën dhe alarmi bie</div>
+  <div class="clock" id="clock">00:00:00</div>
+  <div class="date" id="date"></div>
+  <div class="setters">
+    <div><label>Ora</label><select id="hour"></select></div>
+    <div><label>Minuta</label><select id="minute"></select></div>
+    <div><label>Sekonda</label><select id="second"></select></div>
+  </div>
+  <button id="setBtn" onclick="setAlarm()">Vendos Alarmin</button>
+  <button id="stopBtn" onclick="stopAlarm()">⏹ Ndalo Alarmin</button>
+  <div class="status" id="status">Zgjidh kohën dhe shtyp "Vendos Alarmin"</div>
+</div>
+<footer>Krijuar nga <strong>Erion Nezha</strong> — © 2026</footer>
+<script>
+const pad=n=>String(n).padStart(2,'0');
+['hour','minute','second'].forEach((id,i)=>{
+  const sel=document.getElementById(id),max=i===0?24:61;
+  for(let n=0;n<max;n++){const o=document.createElement('option');o.value=pad(n);o.textContent=pad(n);sel.appendChild(o);}
+});
+function tick(){
+  const d=new Date();
+  document.getElementById('clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  document.getElementById('date').textContent=d.toLocaleDateString('sq-AL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+tick();setInterval(tick,1000);
+
+let alarmTime=null,ringTimer=null,audioCtx=null;
+function setAlarm(){
+  const h=document.getElementById('hour').value,m=document.getElementById('minute').value,s=document.getElementById('second').value;
+  alarmTime=h+':'+m+':'+s;
+  document.getElementById('status').textContent='⏳ Alarmi u vendos për '+alarmTime;
+  document.getElementById('status').className='status set';
+  document.getElementById('setBtn').disabled=true;
+}
+function stopAlarm(){
+  clearInterval(ringTimer);ringTimer=null;
+  document.getElementById('stopBtn').style.display='none';
+  document.getElementById('card').classList.remove('ringing');
+  document.getElementById('status').textContent='Zgjidh kohën dhe shtyp "Vendos Alarmin"';
+  document.getElementById('status').className='status';
+  document.getElementById('setBtn').disabled=false;
+}
+function beep(){
+  if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);
+  o.frequency.value=880;g.gain.value=0.3;
+  o.start();o.stop(audioCtx.currentTime+0.25);
+}
+setInterval(()=>{
+  if(!alarmTime)return;
+  const d=new Date();
+  if(pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())===alarmTime){
+    alarmTime=null;
+    document.getElementById('status').textContent='🔔 Koha për t\u2019u zgjuar!';
+    document.getElementById('status').className='status set';
+    document.getElementById('card').classList.add('ringing');
+    document.getElementById('stopBtn').style.display='inline-block';
+    ringTimer=setInterval(beep,400);beep();
+  }
+},500);
+</script>
+</body>
+</html>
